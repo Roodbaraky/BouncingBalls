@@ -10,6 +10,7 @@ const camera = new THREE.PerspectiveCamera(
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+const bounds = Math.min(window.innerWidth, window.innerHeight) / 100;
 document.body.appendChild(renderer.domElement);
 
 const randomHexColorCode = () => {
@@ -29,38 +30,39 @@ class Ball {
     this.dy = (Math.random() * this.dmax - 2) * 0.1;
     this.dz = (Math.random() * this.dmax - 2) * 0.1;
     this.ball.position.set(
-      Math.random() * 10 - 5,
-      Math.random() * 10 - 5,
-      Math.random() * 10 - 5
+        Math.random() * bounds - bounds / 2,
+        Math.random() * bounds - bounds / 2,
+        Math.random() * bounds - bounds / 2
     );
   }
 
   move() {
-    if (Math.abs(this.ball.position.x) > 5) this.dx *= -1;
-    if (Math.abs(this.ball.position.y) > 5) this.dy *= -1;
-    if (Math.abs(this.ball.position.z) > 5) this.dz *= -1;
-
+    if (Math.abs(this.ball.position.x) > 10) this.dx *= -1;
+    if (Math.abs(this.ball.position.y) > 10) this.dy *= -1;
+    if (Math.abs(this.ball.position.z) > 10) this.dz *= -1;
     this.ball.position.x += this.dx;
     this.ball.position.y += this.dy;
     this.ball.position.z += this.dz;
   }
 }
 
-const balls = Array.from({ length: 20 }, () => new Ball());
+const balls = Array.from({ length: 10 }, () => new Ball());
 balls.forEach((ball) => scene.add(ball.ball));
 
-camera.position.z = 15;
-
+camera.position.z = bounds * 3;
 function drawLine(ball1, ball2) {
   const dist = ball1.ball.position.distanceTo(ball2.ball.position);
   const material = new THREE.LineBasicMaterial({
     color: 0xffffff,
     transparent: true,
-    opacity: `${dist / 40}`,
+    opacity: `${2 / dist}`,
+    linewidth: `${10 / dist}`,
   });
   const points = [];
-  points.push(ball1.ball.position.clone());
-  points.push(ball2.ball.position.clone());
+  if (dist < 10) {
+    points.push(ball1.ball.position.clone());
+    points.push(ball2.ball.position.clone());
+  }
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   const line = new THREE.Line(geometry, material);
   scene.add(line);
@@ -80,4 +82,12 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+window.addEventListener("resize", () => {
+    const bounds = Math.min(window.innerWidth, window.innerHeight) / 100;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.position.z = bounds * 3; 
+  });
+  
 renderer.setAnimationLoop(animate);
