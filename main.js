@@ -31,7 +31,7 @@ class Ball {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         baseColor: { value: randomColor.toArray() }, 
-        steps: { value: 9.0 }, 
+        steps: { value: 3.0 }, 
       },
       wireframe: false,
       vertexShader: `
@@ -74,6 +74,7 @@ class Ball {
     this.ball.position.x += this.dx;
     this.ball.position.y += this.dy;
     this.ball.position.z += this.dz;
+    this.ball.rotateX(Math.random()*0.1)
   }
 }
 
