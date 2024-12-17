@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { stereoPass } from "three/examples/jsm/tsl/display/StereoPassNode.js";
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -22,9 +23,38 @@ const randomHexColorCode = () => {
 class Ball {
   dmax = 4;
   constructor() {
-    this.geometry = new THREE.SphereGeometry(1);
-    this.color = randomHexColorCode();
-    this.material = new THREE.MeshBasicMaterial({ color: this.color });
+    this.geometry = new THREE.SphereGeometry(1, 32, 32);
+  
+   
+    const randomColor = new THREE.Color(randomHexColorCode());
+  
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        baseColor: { value: randomColor.toArray() }, 
+        steps: { value: 9.0 }, 
+      },
+      wireframe: false,
+      vertexShader: `
+        varying vec3 vPosition;
+        void main() {
+          vPosition = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 baseColor; // Base color for the ball
+        uniform float steps;    // Number of gradient steps
+        varying vec3 vPosition;
+  
+        void main() {
+          float mixFactor = (vPosition.y + 1.0) / 2.0; // Normalize y to [0, 1]
+          float stepFactor = floor(mixFactor * steps) / (steps - 1.0);
+          vec3 stepColor = baseColor * (0.7 + 0.3 * stepFactor); // Darken or lighten the base color
+          gl_FragColor = vec4(stepColor, 1.0);
+        }
+      `,
+    });
+  
     this.ball = new THREE.Mesh(this.geometry, this.material);
     this.dx = (Math.random() * this.dmax - 2) * 0.1;
     this.dy = (Math.random() * this.dmax - 2) * 0.1;
@@ -35,18 +65,19 @@ class Ball {
       Math.random() * bounds - bounds / 2
     );
   }
+  
 
   move() {
-    if (Math.abs(this.ball.position.x) > 10) this.dx *= -1;
-    if (Math.abs(this.ball.position.y) > 10) this.dy *= -1;
-    if (Math.abs(this.ball.position.z) > 10) this.dz *= -1;
+    if (Math.abs(this.ball.position.x) > bounds) this.dx *= -1;
+    if (Math.abs(this.ball.position.y) > bounds) this.dy *= -1;
+    if (Math.abs(this.ball.position.z) > bounds) this.dz *= -1;
     this.ball.position.x += this.dx;
     this.ball.position.y += this.dy;
     this.ball.position.z += this.dz;
   }
 }
 
-const balls = Array.from({ length: 20 }, () => new Ball());
+const balls = Array.from({ length: 10 }, () => new Ball());
 balls.forEach((ball) => scene.add(ball.ball));
 
 camera.position.z = bounds * 3;
